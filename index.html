@@ -1,146 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Times Tables Practice</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: #f4f4f9;
+  <title>Times Tables + Firebase Leaderboard</title>
+  <script type="module">
+    // Import Firebase modules (from their CDN)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } 
+      from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+   // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA70to_jXGxjgGW0TlhiQt7RzG44Fq9NH4",
+  authDomain: "times-tables-9bf0b.firebaseapp.com",
+  projectId: "times-tables-9bf0b",
+  storageBucket: "times-tables-9bf0b.firebasestorage.app",
+  messagingSenderId: "803197098647",
+  appId: "1:803197098647:web:5be190c94ab5e66fbfa7d2",
+  measurementId: "G-KDH848CEXH"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+    // 🔹 Initialize Firebase + Firestore
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 🔹 Save a score
+    async function saveScore(name, score) {
+      try {
+        await addDoc(collection(db, "scores"), {
+          name: name,
+          score: score,
+          date: new Date()
+        });
+        console.log("Score saved!");
+      } catch (e) {
+        console.error("Error adding score: ", e);
+      }
     }
-    h1 {
-      margin-bottom: 10px;
+
+    // 🔹 Load top 5 scores
+    async function loadScores() {
+      const q = query(collection(db, "scores"), orderBy("score", "desc"), limit(5));
+      const querySnapshot = await getDocs(q);
+      const leaderboard = document.getElementById("leaderboard");
+      leaderboard.innerHTML = "";
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        leaderboard.innerHTML += `<li>${data.name}: ${data.score}</li>`;
+      });
     }
-    .tables {
-      margin: 20px 0;
-    }
-    label {
-      margin: 0 8px;
-    }
-    .hidden {
-      display: none;
-    }
-    .question {
-      font-size: 2em;
-      margin: 20px 0;
-    }
-    input[type="number"] {
-      font-size: 1.2em;
-      padding: 5px;
-      width: 100px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    .score {
-      font-weight: bold;
-      margin-top: 20px;
-    }
-  </style>
+
+    // 🔹 Example usage (just for demo)
+    window.submitScore = async () => {
+      const name = document.getElementById("name").value;
+      const score = Math.floor(Math.random() * 12); // random score for demo
+      await saveScore(name, score);
+      await loadScores();
+    };
+
+    // Load scores when page opens
+    window.onload = loadScores;
+  </script>
 </head>
 <body>
-  <h1>Times Tables Practice</h1>
+  <h1>Times Tables Leaderboard (Demo)</h1>
+  <input id="name" placeholder="Your name" />
+  <button onclick="submitScore()">Submit Random Score</button>
 
-  <div id="setup">
-    <h3>Select tables:</h3>
-    <div class="tables" id="tables"></div>
-
-    <h3>Number of questions:</h3>
-    <input type="number" id="numQuestions" value="10" min="1" max="100" />
-
-    <br><br>
-    <button onclick="startGame()">Start Practice</button>
-  </div>
-
-  <div id="quiz" class="hidden">
-    <div class="question" id="question"></div>
-    <input type="number" id="answer" placeholder="Your answer" onkeydown="if(event.key==='Enter') submitAnswer()" />
-    <br>
-    <button onclick="submitAnswer()">Submit</button>
-    <div class="score" id="progress"></div>
-  </div>
-
-  <div id="result" class="hidden">
-    <h2>All done!</h2>
-    <p id="finalScore"></p>
-    <button onclick="restart()">Try Again</button>
-  </div>
-
-  <script>
-    const tablesDiv = document.getElementById('tables');
-    for (let i = 1; i <= 12; i++) {
-      const label = document.createElement('label');
-      label.innerHTML = `<input type="checkbox" value="${i}" checked> ${i}`;
-      tablesDiv.appendChild(label);
-    }
-
-    let selectedTables = [];
-    let numQuestions = 10;
-    let questions = [];
-    let current = 0;
-    let score = 0;
-
-    function startGame() {
-      selectedTables = Array.from(document.querySelectorAll('#tables input:checked')).map(cb => parseInt(cb.value));
-      numQuestions = parseInt(document.getElementById('numQuestions').value);
-
-      if (selectedTables.length === 0) {
-        alert('Please select at least one table.');
-        return;
-      }
-
-      questions = [];
-      for (let i = 0; i < numQuestions; i++) {
-        let a = selectedTables[Math.floor(Math.random() * selectedTables.length)];
-        let b = Math.floor(Math.random() * 12) + 1;
-        questions.push({a, b, answer: a * b});
-      }
-
-      current = 0;
-      score = 0;
-
-      document.getElementById('setup').classList.add('hidden');
-      document.getElementById('quiz').classList.remove('hidden');
-      showQuestion();
-    }
-
-    function showQuestion() {
-      const q = questions[current];
-      document.getElementById('question').innerText = `${q.a} × ${q.b} = ?`;
-      document.getElementById('answer').value = '';
-      document.getElementById('answer').focus();
-      document.getElementById('progress').innerText = `Question ${current+1} of ${numQuestions} | Score: ${score}`;
-    }
-
-    function submitAnswer() {
-      const userAnswer = parseInt(document.getElementById('answer').value);
-      if (!isNaN(userAnswer) && userAnswer === questions[current].answer) {
-        score++;
-      }
-      current++;
-      if (current < numQuestions) {
-        showQuestion();
-      } else {
-        endGame();
-      }
-    }
-
-    function endGame() {
-      document.getElementById('quiz').classList.add('hidden');
-      document.getElementById('result').classList.remove('hidden');
-      document.getElementById('finalScore').innerText = `You scored ${score} out of ${numQuestions}.`;
-    }
-
-    function restart() {
-      document.getElementById('result').classList.add('hidden');
-      document.getElementById('setup').classList.remove('hidden');
-    }
-  </script>
+  <h3>Top Scores:</h3>
+  <ul id="leaderboard"></ul>
 </body>
 </html>
