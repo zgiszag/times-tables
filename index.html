@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Times Tables Practice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f4f4f9;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .tables {
+      margin: 20px 0;
+    }
+    label {
+      margin: 0 8px;
+    }
+    .hidden {
+      display: none;
+    }
+    .question {
+      font-size: 2em;
+      margin: 20px 0;
+    }
+    input[type="number"] {
+      font-size: 1.2em;
+      padding: 5px;
+      width: 100px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    .score {
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Times Tables Practice</h1>
+
+  <div id="setup">
+    <h3>Select tables:</h3>
+    <div class="tables" id="tables"></div>
+
+    <h3>Number of questions:</h3>
+    <input type="number" id="numQuestions" value="10" min="1" max="100" />
+
+    <br><br>
+    <button onclick="startGame()">Start Practice</button>
+  </div>
+
+  <div id="quiz" class="hidden">
+    <div class="question" id="question"></div>
+    <input type="number" id="answer" placeholder="Your answer" onkeydown="if(event.key==='Enter') submitAnswer()" />
+    <br>
+    <button onclick="submitAnswer()">Submit</button>
+    <div class="score" id="progress"></div>
+  </div>
+
+  <div id="result" class="hidden">
+    <h2>All done!</h2>
+    <p id="finalScore"></p>
+    <button onclick="restart()">Try Again</button>
+  </div>
+
+  <script>
+    const tablesDiv = document.getElementById('tables');
+    for (let i = 1; i <= 12; i++) {
+      const label = document.createElement('label');
+      label.innerHTML = `<input type="checkbox" value="${i}" checked> ${i}`;
+      tablesDiv.appendChild(label);
+    }
+
+    let selectedTables = [];
+    let numQuestions = 10;
+    let questions = [];
+    let current = 0;
+    let score = 0;
+
+    function startGame() {
+      selectedTables = Array.from(document.querySelectorAll('#tables input:checked')).map(cb => parseInt(cb.value));
+      numQuestions = parseInt(document.getElementById('numQuestions').value);
+
+      if (selectedTables.length === 0) {
+        alert('Please select at least one table.');
+        return;
+      }
+
+      questions = [];
+      for (let i = 0; i < numQuestions; i++) {
+        let a = selectedTables[Math.floor(Math.random() * selectedTables.length)];
+        let b = Math.floor(Math.random() * 12) + 1;
+        questions.push({a, b, answer: a * b});
+      }
+
+      current = 0;
+      score = 0;
+
+      document.getElementById('setup').classList.add('hidden');
+      document.getElementById('quiz').classList.remove('hidden');
+      showQuestion();
+    }
+
+    function showQuestion() {
+      const q = questions[current];
+      document.getElementById('question').innerText = `${q.a} × ${q.b} = ?`;
+      document.getElementById('answer').value = '';
+      document.getElementById('answer').focus();
+      document.getElementById('progress').innerText = `Question ${current+1} of ${numQuestions} | Score: ${score}`;
+    }
+
+    function submitAnswer() {
+      const userAnswer = parseInt(document.getElementById('answer').value);
+      if (!isNaN(userAnswer) && userAnswer === questions[current].answer) {
+        score++;
+      }
+      current++;
+      if (current < numQuestions) {
+        showQuestion();
+      } else {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      document.getElementById('quiz').classList.add('hidden');
+      document.getElementById('result').classList.remove('hidden');
+      document.getElementById('finalScore').innerText = `You scored ${score} out of ${numQuestions}.`;
+    }
+
+    function restart() {
+      document.getElementById('result').classList.add('hidden');
+      document.getElementById('setup').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
